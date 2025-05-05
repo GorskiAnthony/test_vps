@@ -6,7 +6,7 @@
     "db:migrate": "tsx ./bin/migrate",
     "db:seed": "tsx ./bin/seed",
     "build": "tsx ./bin/migrate",
-    "start": "tsx ./src/main",
+    "start": "npx tsx ./src/main",
     "test": "jest --verbose"
   },
   "dependencies": {
