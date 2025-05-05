@@ -23,7 +23,7 @@ WORKDIR /app
 COPY --from=build /app/server .
 
 # Installer uniquement les dépendances de prod
-RUN npm install --omit=dev
+RUN npm install
 
 EXPOSE 3000
 
