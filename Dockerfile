@@ -3,15 +3,15 @@ FROM node:18-alpine AS build
 
 WORKDIR /app
 
-# 1. Copier et installer client
+# 1. Copie et installe le client
 COPY client ./client
 RUN cd client && npm install && npm run build
 
-# 2. Copier et installer server
+# 2. Copie et installe le server
 COPY server ./server
 RUN cd server && npm install && npm run build
 
-# 3. Copier le front compilé dans le dossier public du backend
+# 3. Copie le frontend compilé dans le dossier public du server
 RUN rm -rf server/public && mkdir -p server/public && cp -r client/dist/* server/public/
 
 # Étape 2 : Image finale minimale
