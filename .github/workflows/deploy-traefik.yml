@@ -49,7 +49,7 @@ jobs:
 
             ENV_PROJECT_PATH=/tmp/${{ vars.PROJECT_NAME }}.env
 
-            echo "APP_PORT=3000" > $ENV_PROJECT_PATH
+            echo "APP_PORT=3310" > $ENV_PROJECT_PATH
             echo "APP_SECRET=$APP_SECRET" >> $ENV_PROJECT_PATH
             echo "DB_HOST=$DB_HOST" >> $ENV_PROJECT_PATH
             echo "DB_PORT=3306" >> $ENV_PROJECT_PATH
