@@ -8,6 +8,7 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
@@ -33,6 +34,24 @@ jobs:
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
+
             docker stop ${{ vars.PROJECT_NAME }} || true
             docker rm ${{ vars.PROJECT_NAME }} || true
-            docker run -d --name ${{ vars.PROJECT_NAME }} -p 3000:3000 ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
+
+            docker network ls | grep -q proxy || docker network create proxy
+
+            # Extraire HOST depuis le fichier .env
+            HOST=$(grep '^HOST=' /home/ubuntu/traefik/data/.env | cut -d '=' -f2)
+
+            docker run -d \
+              --name ${{ vars.PROJECT_NAME }} \
+              --env-file /home/ubuntu/traefik/data/.env \
+              --network proxy \
+              -l "traefik.enable=true" \
+              -l "traefik.docker.network=proxy" \
+              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.rule=Host(\`${{ vars.PROJECT_NAME }}.${HOST}\`)" \
+              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.entrypoints=websecure" \
+              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.tls.certresolver=myresolver" \
+              -l "traefik.http.services.${{ vars.PROJECT_NAME }}.loadbalancer.server.port=3000" \
+              -p 3000:3000 \
+              ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
