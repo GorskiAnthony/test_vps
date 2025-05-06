@@ -3,9 +3,10 @@
   "scripts": {
     "check-types": "tsc --noEmit",
     "dev": "tsx watch --clear-screen=false ./src/main",
+    "migrate": "tsx ./bin/migrate",
     "db:migrate": "tsx ./bin/migrate",
     "db:seed": "tsx ./bin/seed",
-    "build": "tsx ./bin/migrate",
+    "build": "tsc",
     "start": "npx tsx ./src/main",
     "test": "jest --verbose"
   },
