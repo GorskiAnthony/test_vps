@@ -28,7 +28,7 @@ RUN cd server && npm run build
 RUN rm -rf server/public && mkdir -p server/public && cp -r client/dist/* server/public/
 
 # Étape 2 : Image finale
-FROM node:18-alpine
+FROM node:20-alpine
 
 WORKDIR /app
 
@@ -36,6 +36,6 @@ COPY --from=build /app/server .
 
 RUN npm install --omit=dev
 
-EXPOSE 3000
+EXPOSE 3310
 
 CMD ["npm", "run", "start"]
