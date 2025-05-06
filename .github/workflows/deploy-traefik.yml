@@ -49,13 +49,19 @@ jobs:
 
             ENV_PROJECT_PATH=/tmp/${{ vars.PROJECT_NAME }}.env
 
-            echo "APP_PORT=3310" > $ENV_PROJECT_PATH
+            echo "APP_PORT=3000" > $ENV_PROJECT_PATH
+            echo "APP_SECRET=$APP_SECRET" >> $ENV_PROJECT_PATH
             echo "DB_HOST=$DB_HOST" >> $ENV_PROJECT_PATH
+            echo "DB_PORT=3306" >> $ENV_PROJECT_PATH
+            echo "DB_USER=$DB_USER" >> $ENV_PROJECT_PATH
+            echo "DB_PASSWORD=$DB_PASSWORD" >> $ENV_PROJECT_PATH
             echo "DB_NAME=${{ vars.PROJECT_NAME }}" >> $ENV_PROJECT_PATH
             echo "HOST=$HOST" >> $ENV_PROJECT_PATH
 
-            echo "✅ .env projet généré :"
-            cat $ENV_PROJECT_PATH
+            echo "✅ .env projet généré avec succès ✅"
+            echo "Contenu visible :"
+            grep -E '^(APP_PORT|DB_HOST|DB_NAME|HOST)=' $ENV_PROJECT_PATH
+            echo "ℹ️ Variables sensibles masquées (DB_USER, DB_PASSWORD, APP_SECRET)"
 
             docker run -d \
               --name ${{ vars.PROJECT_NAME }} \
@@ -66,8 +72,8 @@ jobs:
               -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.rule=Host(\`${{ vars.PROJECT_NAME }}.${HOST}\`)" \
               -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.entrypoints=websecure" \
               -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.tls.certresolver=myresolver" \
-              -l "traefik.http.services.${{ vars.PROJECT_NAME }}.loadbalancer.server.port=3310" \
-              -p 3310:3310 \
+              -l "traefik.http.services.${{ vars.PROJECT_NAME }}.loadbalancer.server.port=3000" \
+              -p 3000:3000 \
               ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
 
             echo "⏳ Attente du démarrage du container..."
