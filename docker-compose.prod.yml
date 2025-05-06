@@ -15,6 +15,7 @@ services:
       - "traefik.http.routers.${PROJECT_NAME:-project}-secure.entrypoints=websecure"
       - "traefik.http.routers.${PROJECT_NAME:-project}-secure.rule=Host(`${PROJECT_NAME:-project}.${HOST:-localhost}`)"
       - "traefik.http.services.${PROJECT_NAME:-project}.loadbalancer.server.port=3310"
+      - "traefik.http.routers.${PROJECT_NAME:-project}-secure.tls.certresolver=letsencrypt"
 
 networks:
   proxy:
