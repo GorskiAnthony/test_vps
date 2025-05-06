@@ -33,18 +33,44 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
+            # Pull latest image
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
 
+            # Stop and remove any existing container
             docker stop ${{ vars.PROJECT_NAME }} || true
             docker rm ${{ vars.PROJECT_NAME }} || true
 
+            # Create proxy network if missing
             docker network ls | grep -q proxy || docker network create proxy
 
-            HOST=$(grep '^HOST=' /home/ubuntu/traefik/data/.env | cut -d '=' -f2)
+            # Read values from global .env
+            GLOBAL_ENV_PATH=/home/ubuntu/traefik/data/.env
+            HOST=$(grep '^HOST=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
+            APP_SECRET=$(grep '^APP_SECRET=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
+            DB_HOST="$(grep '^DATABASE_SUBDOMAIN_NAME=' $GLOBAL_ENV_PATH | cut -d '=' -f2)-db"
+            DB_USER=$(grep '^USER_NAME=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
+            DB_PASSWORD=$(grep '^USER_PASSWORD=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
 
+            # Generate project-specific .env
+            ENV_PROJECT_PATH=/tmp/${{ vars.PROJECT_NAME }}.env
+            cat <<EOF > $ENV_PROJECT_PATH
+APP_PORT=3000
+APP_SECRET=$APP_SECRET
+DB_HOST=$DB_HOST
+DB_PORT=3306
+DB_USER=$DB_USER
+DB_PASSWORD=$DB_PASSWORD
+DB_NAME=${{ vars.PROJECT_NAME }}
+HOST=$HOST
+EOF
+
+            echo "✅ .env projet généré :"
+            cat $ENV_PROJECT_PATH
+
+            # Run the container
             docker run -d \
               --name ${{ vars.PROJECT_NAME }} \
-              --env-file /home/ubuntu/traefik/data/.env \
+              --env-file $ENV_PROJECT_PATH \
               --network proxy \
               -l "traefik.enable=true" \
               -l "traefik.docker.network=proxy" \
@@ -55,6 +81,7 @@ jobs:
               -p 3000:3000 \
               ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
 
+            # Wait and run migration
             echo "⏳ Attente du démarrage du container..."
             sleep 10
 
