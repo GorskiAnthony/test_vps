@@ -22,10 +22,9 @@ services:
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.${PROJECT_NAME:-project}.entrypoints=websecure"
-      - "traefik.http.routers.${PROJECT_NAME:-project}.rule=Host(`${PROJECT_NAME:-project}.${HOST:-localhost}`)"
-      - "traefik.http.routers.${PROJECT_NAME:-project}.tls.certresolver=myresolver"
-      - "traefik.http.services.${PROJECT_NAME:-project}.loadbalancer.server.port=3000"
+      - "traefik.http.routers.${PROJECT_NAME:-project}-secure.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME:-project}-secure.rule=Host(`${PROJECT_NAME:-project}.${HOST:-localhost}`)"
+      - "traefik.http.services.${PROJECT_NAME:-project}.loadbalancer.server.port=3310"
 
 networks:
   proxy:
