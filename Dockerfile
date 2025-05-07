@@ -82,4 +82,4 @@ ENV NODE_ENV=production \
     DB_HOST=database-db \
     DB_PORT=3306
 
-CMD ["tsx", "./bin/migrate.ts"]
+CMD ["npm", "run", "start"]
