@@ -8,29 +8,32 @@ ARG VITE_API_URL
 ARG NODE_ENV=production
 
 # Installation des dépendances globales nécessaires
-RUN npm install -g typescript@5.8.2 vite@6.2.4
+RUN npm install -g pnpm
 
 # Création du répertoire de travail
 WORKDIR /app/client
 
-# Copie des fichiers package.json et tsconfig.json
-COPY client/package*.json client/tsconfig*.json ./
+# Copie des fichiers de configuration
+COPY client/package*.json client/tsconfig*.json client/vite.config.ts ./
 
-# Installation des dépendances avec types React
+# Installation des dépendances avec pnpm pour une meilleure gestion
 RUN echo "Installing dependencies..." && \
-    npm install --legacy-peer-deps && \
-    npm install --save-dev @types/react @types/react-dom && \
+    pnpm install --no-frozen-lockfile && \
+    pnpm add -D @vitejs/plugin-react@4.3.4 @types/react@19.0.12 @types/react-dom@19.0.4 && \
     echo "Dependencies installed successfully"
 
 # Copie des fichiers sources
 COPY client/ ./
 
-# Création du fichier de déclaration pour jsx-runtime
-RUN echo 'declare module "react/jsx-runtime" { export { jsx, jsxs, Fragment } from "react" }' > src/jsx-runtime.d.ts
+# Vérification de l'installation
+RUN echo "Installed packages:" && \
+    pnpm list && \
+    echo "Vite config:" && \
+    cat vite.config.ts
 
-# Build direct avec Vite (qui inclut la vérification TypeScript)
+# Build avec Vite
 RUN echo "Starting Vite build..." && \
-    npx vite build && \
+    pnpm build && \
     echo "Build completed successfully" && \
     echo "Build output:" && \
     ls -la dist/
