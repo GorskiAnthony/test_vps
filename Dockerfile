@@ -8,17 +8,31 @@ ARG VITE_API_URL
 ARG NODE_ENV=production
 
 # Installation des dépendances globales nécessaires
-RUN npm install -g typescript vite@latest
+RUN npm install -g typescript@5.8.2 vite@6.2.4
 
 # Copie des fichiers du client
 COPY client/package*.json ./
-RUN npm install
 
+# Installation des dépendances avec plus de détails
+RUN echo "Installing dependencies..." && \
+    npm install --legacy-peer-deps && \
+    echo "Dependencies installed successfully"
+
+# Copie des fichiers sources
 COPY client/ ./
 
-# Build du client avec debug
-RUN echo "Building client..." && \
-    npm run build || (echo "Build failed" && ls -la && exit 1)
+# Vérification de la présence des fichiers
+RUN echo "Checking files:" && ls -la
+
+# Build du client avec plus de détails
+RUN echo "Starting TypeScript check..." && \
+    npx tsc --noEmit && \
+    echo "TypeScript check passed" && \
+    echo "Starting Vite build..." && \
+    npx vite build && \
+    echo "Build completed successfully" && \
+    echo "Build output:" && \
+    ls -la dist/
 
 # Étape 2 : Build du serveur
 FROM node:20-alpine AS server-builder
