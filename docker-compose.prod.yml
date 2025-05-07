@@ -5,6 +5,15 @@ services:
     image: ${DOCKER_IMAGE}
     container_name: ${PROJECT_NAME:-project}-web
     restart: always
+    environment:
+      APP_PORT: ${APP_PORT:-3310}
+      APP_SECRET: ${APP_SECRET}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT:-3306}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_NAME: ${DB_NAME}
+      HOST: ${HOST}
     networks:
       - proxy
     labels:
@@ -12,7 +21,7 @@ services:
       - "traefik.docker.network=proxy"
       - "traefik.http.routers.${PROJECT_NAME:-project}-secure.entrypoints=websecure"
       - "traefik.http.routers.${PROJECT_NAME:-project}-secure.rule=Host(`${PROJECT_NAME:-project}.${HOST:-localhost}`)"
-      - "traefik.http.services.${PROJECT_NAME:-project}.loadbalancer.server.port=3310"
+      - "traefik.http.services.${PROJECT_NAME:-project}.loadbalancer.server.port=${APP_PORT:-3310}"
       - "traefik.http.routers.${PROJECT_NAME:-project}-secure.tls.certresolver=letsencrypt"
 
 networks:
