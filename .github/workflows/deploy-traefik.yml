@@ -69,11 +69,10 @@ jobs:
               --network proxy \
               -l traefik.enable=true \
               -l traefik.docker.network=proxy \
-              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.rule=Host(\`${{ vars.PROJECT_NAME }}.${HOST}\`)" \
-              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.entrypoints=websecure" \
-              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.tls.certresolver=myresolver" \
-              -l "traefik.http.services.${{ vars.PROJECT_NAME }}.loadbalancer.server.port=3000" \
-              -p 3000:3000 \
+              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}-secure.rule=Host(\`${{ vars.PROJECT_NAME }}.${HOST}\`)" \
+              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}-secure.entrypoints=websecure" \
+              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.tls.certresolver=letsencrypt" \
+              -l "traefik.http.services.${{ vars.PROJECT_NAME }}.loadbalancer.server.port=3310" \
               ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
 
             echo "⏳ Attente du démarrage du container..."
