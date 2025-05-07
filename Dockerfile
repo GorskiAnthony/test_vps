@@ -1,81 +1,41 @@
-# Étape 1 : Build du client
-FROM node:20-alpine AS client-builder
+# Étape 1 : Build client + server
+FROM node:20-alpine AS build
 
-WORKDIR /app/client
+WORKDIR /app
 
-# Arguments de build pour la configuration du client
-ARG VITE_API_URL
-ARG NODE_ENV=production
+# Copier séparément pour maximiser le cache
+COPY client/package*.json ./client/
+COPY server/package*.json ./server/
 
-# Installation des dépendances globales nécessaires
-RUN npm install -g pnpm
+# Installer les deps séparément
+RUN cd client && npm install
+RUN cd server && npm install
 
-# Copie et installation des dépendances du client
-COPY client/package*.json ./
-RUN pnpm install --no-frozen-lockfile
+# Copier le reste du code
+COPY client ./client
+COPY server ./server
 
-# Copie du reste des fichiers du client
-COPY client/ ./
+# Variables d'environnement pour le build front
+ENV VITE_API_URL=http://localhost:3000
 
 # Build du client
-RUN echo "Building client..." && \
-    pnpm build && \
-    echo "Client build completed successfully"
-
-# Étape 2 : Build du serveur
-FROM node:20-alpine AS server-builder
-
-WORKDIR /app/server
-
-# Copie des fichiers de configuration du serveur
-COPY server/package*.json ./
-
-# Installation des dépendances
-RUN npm install
-
-# Copie de tous les fichiers source du serveur
-COPY server/src ./src
-COPY server/database ./database
-COPY server/bin ./bin
-COPY server/tsconfig.json ./
-
-# Configuration TypeScript pour le build
-RUN echo '{"compilerOptions":{"target":"es2022","module":"commonjs","outDir":"./dist","baseUrl":".","paths":{"../../../database/*":["database/*"]},"strict":true,"esModuleInterop":true,"skipLibCheck":true},"include":["src/**/*","database/**/*"]}' > ./tsconfig.json
+RUN cd client && npm run build
 
 # Build du serveur
-RUN echo "Building server..." && \
-    npx tsc && \
-    echo "Server build completed successfully"
+RUN cd server && npm run build
 
-# Étape 3 : Image finale
+# Copier le build client dans le dossier public du server
+RUN rm -rf server/public && mkdir -p server/public && cp -r client/dist/* server/public/
+
+# Étape 2 : Image finale
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Installation des outils nécessaires
-RUN apk add --no-cache curl && \
-    npm install -g tsx
+COPY --from=build /app/server .
 
-# Copie des fichiers du serveur
-COPY --from=server-builder /app/server/dist ./dist
-COPY --from=server-builder /app/server/bin ./bin
-COPY --from=server-builder /app/server/database ./database
-COPY --from=server-builder /app/server/package.json ./
+RUN npm install --omit=dev
 
-# Installation des dépendances avec les scripts
-RUN npm install
-
-# Copie des fichiers statiques du client
-COPY --from=client-builder /app/client/dist ./public
-
-# Création d'un utilisateur non-root
-RUN addgroup -S appgroup && \
-    adduser -S appuser -G appgroup && \
-    chown -R appuser:appgroup /app
-
-USER appuser
-
-# Configuration finale
 EXPOSE 3310
 ENV NODE_ENV=production \
     PORT=3310 \
