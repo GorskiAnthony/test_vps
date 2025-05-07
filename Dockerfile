@@ -67,14 +67,14 @@ WORKDIR /app
 # Installation des outils de diagnostic
 RUN apk add --no-cache curl
 
-# Copie des fichiers nécessaires
-COPY --from=server-builder /app/dist ./dist
-COPY --from=server-builder /app/package*.json ./
-COPY --from=server-builder /app/node_modules ./node_modules
+# Copie des fichiers nécessaires du serveur
+COPY --from=server-builder /app/server/dist ./dist
+COPY --from=server-builder /app/server/package*.json ./
+COPY --from=server-builder /app/server/node_modules ./node_modules
 
 # Copie des fichiers statiques du client
 RUN mkdir -p public
-COPY --from=client-builder /app/dist ./public
+COPY --from=client-builder /app/client/dist ./public
 
 # Installation de tsx pour le runtime
 RUN npm install -g tsx
