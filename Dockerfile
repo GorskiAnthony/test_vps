@@ -9,7 +9,7 @@ ARG NODE_ENV=production
 
 # Installation des dépendances du client
 COPY client/package*.json ./
-RUN npm ci
+RUN npm install
 
 # Build du client
 COPY client/ ./
