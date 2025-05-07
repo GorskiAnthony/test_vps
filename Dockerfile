@@ -1,42 +1,47 @@
-# Étape 1 : Build client + server
-FROM node:20-alpine AS build
+# Étape 1 : Build du client
+FROM node:20-alpine AS client-builder
 
-WORKDIR /app
+WORKDIR /app/client
 
-# Copier les fichiers nécessaires pour le cache
-COPY client/package*.json ./client/
-COPY server/package*.json ./server/
-
-RUN cd client && npm install
-RUN cd server && npm install
-
-# Copier tout le reste du projet
-COPY . .
-
-# Variables d’environnement pour le build front
-ENV VITE_API_URL=http://localhost:3000
+# Installation des dépendances du client
+COPY client/package*.json ./
+RUN npm ci
 
 # Build du client
-RUN cd client && npm run build
+COPY client/ ./
+RUN npm run build
+
+# Étape 2 : Build du serveur
+FROM node:20-alpine AS server-builder
+
+WORKDIR /app/server
+
+# Installation des dépendances du serveur
+COPY server/package*.json ./
+RUN npm ci
 
 # Build du serveur
-RUN cd server && npm run build
+COPY server/ ./
+RUN npm run build
 
-# Copier le build client dans le dossier public du serveur
-RUN rm -rf server/public && mkdir -p server/public && cp -r client/dist/* server/public/
-
-
-# Étape 2 : Image finale (runtime uniquement)
+# Étape 3 : Image finale
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copier uniquement le dossier du serveur avec le build client déjà intégré
-COPY --from=build /app/server .
+# Copie des fichiers du serveur buildé
+COPY --from=server-builder /app/server/dist ./dist
+COPY --from=server-builder /app/server/package*.json ./
 
-# Installer les dépendances sans les devDependencies
-RUN npm install --omit=dev
+# Installation des dépendances de production uniquement
+RUN npm ci --omit=dev
 
+# Création et copie des fichiers statiques du client
+RUN mkdir -p public
+COPY --from=client-builder /app/client/dist ./public
+
+# Exposition du port
 EXPOSE 3310
 
+# Démarrage de l'application
 CMD ["npm", "run", "start"]
