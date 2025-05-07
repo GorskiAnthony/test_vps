@@ -1,7 +1,7 @@
 # Étape 1 : Build du client
 FROM node:20-alpine AS client-builder
 
-WORKDIR /app
+WORKDIR /app/client
 
 # Arguments de build pour la configuration du client
 ARG VITE_API_URL
@@ -10,84 +10,71 @@ ARG NODE_ENV=production
 # Installation des dépendances globales nécessaires
 RUN npm install -g pnpm
 
-# Copie des fichiers du client
-COPY client/ ./client/
-WORKDIR /app/client
+# Copie et installation des dépendances du client
+COPY client/package*.json ./
+RUN pnpm install --no-frozen-lockfile
 
-# Installation des dépendances avec pnpm
-RUN echo "Installing client dependencies..." && \
-    pnpm install --no-frozen-lockfile && \
-    pnpm add -D @vitejs/plugin-react@4.3.4 && \
-    echo "Client dependencies installed successfully"
+# Copie du reste des fichiers du client
+COPY client/ ./
 
 # Build du client
 RUN echo "Building client..." && \
     pnpm build && \
-    echo "Client build completed" && \
-    ls -la dist/
+    echo "Client build completed successfully"
 
 # Étape 2 : Build du serveur
 FROM node:20-alpine AS server-builder
 
-WORKDIR /app
-
-# Installation des dépendances globales
-RUN npm install -g typescript tsx
-
-# Copie des fichiers du serveur
-COPY server/ ./server/
 WORKDIR /app/server
 
+# Copie des fichiers de configuration du serveur
+COPY server/package*.json server/tsconfig.json ./
+
 # Installation des dépendances
-RUN echo "Installing server dependencies..." && \
-    npm install && \
-    echo "Server dependencies installed successfully"
+RUN npm install
+
+# Copie du code source du serveur
+COPY server/src ./src
+
+# Configuration TypeScript pour le build
+RUN echo '{"compilerOptions":{"target":"es2022","module":"commonjs","outDir":"./dist","rootDir":"./src","strict":true,"esModuleInterop":true,"skipLibCheck":true},"include":["src/**/*"]}' > ./tsconfig.json
 
 # Build du serveur
 RUN echo "Building server..." && \
-    npm run build && \
-    echo "Server build completed" && \
-    ls -la dist/
+    npx tsc && \
+    echo "Server build completed successfully"
 
 # Étape 3 : Image finale
 FROM node:20-alpine
 
-# Création d'un utilisateur non-root
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
 WORKDIR /app
 
-# Installation des outils de diagnostic
-RUN apk add --no-cache curl
+# Installation des outils nécessaires
+RUN apk add --no-cache curl && \
+    npm install -g tsx
 
 # Copie des fichiers du serveur
 COPY --from=server-builder /app/server/dist ./dist
-COPY --from=server-builder /app/server/package.json ./package.json
+COPY --from=server-builder /app/server/package.json ./
 RUN npm install --omit=dev
 
 # Copie des fichiers statiques du client
-RUN mkdir -p public
 COPY --from=client-builder /app/client/dist ./public
 
-# Installation de tsx pour le runtime
-RUN npm install -g tsx
+# Création d'un utilisateur non-root
+RUN addgroup -S appgroup && \
+    adduser -S appuser -G appgroup && \
+    chown -R appuser:appgroup /app
 
-# Configuration des permissions
-RUN chown -R appuser:appgroup /app
-
-# Utilisateur non-root pour la sécurité
 USER appuser
 
 # Healthcheck pour Traefik
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:3310/health || exit 1
 
-# Exposition du port
+# Configuration finale
 EXPOSE 3310
-
-# Variables d'environnement par défaut
 ENV NODE_ENV=production \
     PORT=3310
 
-# Démarrage de l'application
 CMD ["tsx", "./dist/main.js"]
