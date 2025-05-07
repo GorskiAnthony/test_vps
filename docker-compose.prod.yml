@@ -5,8 +5,6 @@ services:
     image: ${DOCKER_IMAGE}
     container_name: ${PROJECT_NAME:-project}-web
     restart: always
-    env_file:
-      - ../envs/.env-${GITHUB_REPOSITORY_NAME}
     networks:
       - proxy
     labels:
