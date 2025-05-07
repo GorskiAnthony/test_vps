@@ -28,16 +28,18 @@ FROM node:20-alpine AS server-builder
 WORKDIR /app/server
 
 # Copie des fichiers de configuration du serveur
-COPY server/package*.json server/tsconfig.json ./
+COPY server/package*.json ./
 
 # Installation des dépendances
 RUN npm install
 
-# Copie du code source du serveur
+# Copie de tous les fichiers source du serveur
 COPY server/src ./src
+COPY server/database ./database
+COPY server/tsconfig.json ./
 
 # Configuration TypeScript pour le build
-RUN echo '{"compilerOptions":{"target":"es2022","module":"commonjs","outDir":"./dist","rootDir":"./src","strict":true,"esModuleInterop":true,"skipLibCheck":true},"include":["src/**/*"]}' > ./tsconfig.json
+RUN echo '{"compilerOptions":{"target":"es2022","module":"commonjs","outDir":"./dist","baseUrl":".","paths":{"../../../database/*":["database/*"]},"strict":true,"esModuleInterop":true,"skipLibCheck":true},"include":["src/**/*","database/**/*"]}' > ./tsconfig.json
 
 # Build du serveur
 RUN echo "Building server..." && \
