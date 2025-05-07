@@ -33,14 +33,19 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
+            set -e
+
+            echo "📥 Pull de l'image"
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
 
+            echo "🧹 Suppression du container précédent (s'il existe)"
             docker stop ${{ vars.PROJECT_NAME }}-web || true
             docker rm ${{ vars.PROJECT_NAME }}-web || true
 
+            echo "🌐 Vérification du réseau traefik"
             docker network ls | grep -q proxy || docker network create proxy
 
-            # Load main infra env vars
+            echo "🔐 Chargement des variables globales"
             GLOBAL_ENV_PATH=/home/ubuntu/traefik/data/.env
             HOST=$(grep '^HOST=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
             APP_SECRET=$(grep '^APP_SECRET=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
@@ -48,38 +53,35 @@ jobs:
             DB_USER=$(grep '^USER_NAME=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
             DB_PASSWORD=$(grep '^USER_PASSWORD=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
 
-            # Create project-specific .env
+            echo "🧾 Génération du .env projet"
             ENV_PROJECT_PATH=/tmp/${{ vars.PROJECT_NAME }}.env
 
-            cat <<EOF > $ENV_PROJECT_PATH
-            APP_PORT=3310
-            APP_SECRET=$APP_SECRET
-            DB_HOST=$DB_HOST
-            DB_PORT=3306
-            DB_USER=$DB_USER
-            DB_PASSWORD=$DB_PASSWORD
-            DB_NAME=${{ vars.PROJECT_NAME }}
-            HOST=$HOST
-            DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
-            PROJECT_NAME=${{ vars.PROJECT_NAME }}
-            EOF
+            echo "APP_PORT=3310" > $ENV_PROJECT_PATH
+            echo "APP_SECRET=$APP_SECRET" >> $ENV_PROJECT_PATH
+            echo "DB_HOST=$DB_HOST" >> $ENV_PROJECT_PATH
+            echo "DB_PORT=3306" >> $ENV_PROJECT_PATH
+            echo "DB_USER=$DB_USER" >> $ENV_PROJECT_PATH
+            echo "DB_PASSWORD=$DB_PASSWORD" >> $ENV_PROJECT_PATH
+            echo "DB_NAME=${{ vars.PROJECT_NAME }}" >> $ENV_PROJECT_PATH
+            echo "HOST=$HOST" >> $ENV_PROJECT_PATH
+            echo "DOCKER_IMAGE=${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest" >> $ENV_PROJECT_PATH
+            echo "PROJECT_NAME=${{ vars.PROJECT_NAME }}" >> $ENV_PROJECT_PATH
 
-            echo "✅ .env projet généré avec succès ✅"
+            echo "✅ .env généré avec succès :"
             grep -E '^(APP_PORT|DB_HOST|DB_NAME|HOST)=' $ENV_PROJECT_PATH
 
+            echo "📂 Déploiement du projet avec Docker Compose"
             cd /home/ubuntu/projects/${{ vars.PROJECT_DIRECTORY_NAME }}
 
-            # Inject vars as shell env for strict docker-compose parsing
-            set -a
-            source $ENV_PROJECT_PATH
-            set +a
+            # ✅ Créer un .env vide pour bloquer l'import implicite
+            touch .env
 
             COMPOSE_FILE=docker-compose.prod.yml \
             COMPOSE_PROJECT_NAME=${{ vars.PROJECT_NAME }} \
-            docker compose --env-file $ENV_PROJECT_PATH up -d --remove-orphans --force-recreate
+            docker compose --env-file $ENV_PROJECT_PATH up -d --remove-orphans
 
             echo "⏳ Attente du démarrage du container..."
             sleep 10
 
-            echo "🚀 Lancement de la migration..."
+            echo "🚀 Lancement de la migration (npm run migrate)"
             docker exec ${{ vars.PROJECT_NAME }}-web npm run migrate || echo "❗ Migration échouée ou non nécessaire"
