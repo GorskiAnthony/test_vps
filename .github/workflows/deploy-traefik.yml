@@ -35,8 +35,8 @@ jobs:
           script: |
             docker pull ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
 
-            docker stop ${{ vars.PROJECT_NAME }} || true
-            docker rm ${{ vars.PROJECT_NAME }} || true
+            docker stop ${{ vars.PROJECT_NAME }}-web || true
+            docker rm ${{ vars.PROJECT_NAME }}-web || true
 
             docker network ls | grep -q proxy || docker network create proxy
 
