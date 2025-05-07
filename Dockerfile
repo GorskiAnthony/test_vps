@@ -61,7 +61,9 @@ COPY --from=server-builder /app/server/dist ./dist
 COPY --from=server-builder /app/server/bin ./bin
 COPY --from=server-builder /app/server/database ./database
 COPY --from=server-builder /app/server/package.json ./
-RUN npm install --omit=dev
+
+# Installation des dépendances avec les scripts
+RUN npm install
 
 # Copie des fichiers statiques du client
 COPY --from=client-builder /app/client/dist ./public
@@ -74,7 +76,7 @@ RUN addgroup -S appgroup && \
 USER appuser
 
 # Healthcheck pour Traefik
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
     CMD curl -f http://localhost:3310/health || exit 1
 
 # Configuration finale
@@ -82,4 +84,4 @@ EXPOSE 3310
 ENV NODE_ENV=production \
     PORT=3310
 
-CMD ["/bin/sh", "-c", "tsx ./bin/migrate.ts && tsx ./dist/main.js"]
+CMD ["tsx", "./dist/main.js"]
