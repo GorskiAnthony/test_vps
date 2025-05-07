@@ -2,27 +2,20 @@ version: "3.8"
 
 services:
   web:
-    image: ${DOCKER_IMAGE:?DOCKER_IMAGE not set}
-    container_name: ${PROJECT_NAME:?PROJECT_NAME not set}-web
+    image: ${DOCKER_IMAGE}
+    container_name: ${PROJECT_NAME:-project}-web
     restart: always
-    environment:
-      APP_PORT: ${APP_PORT:?APP_PORT not set}
-      APP_SECRET: ${APP_SECRET:?APP_SECRET not set}
-      DB_HOST: ${DB_HOST:?DB_HOST not set}
-      DB_PORT: ${DB_PORT:?DB_PORT not set}
-      DB_USER: ${DB_USER:?DB_USER not set}
-      DB_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD not set}
-      DB_NAME: ${DB_NAME:?DB_NAME not set}
-      HOST: ${HOST:?HOST not set}
+    env_file:
+      - ../envs/.env-${GITHUB_REPOSITORY_NAME}
     networks:
       - proxy
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.${PROJECT_NAME}-secure.entrypoints=websecure"
-      - "traefik.http.routers.${PROJECT_NAME}-secure.rule=Host(`$${PROJECT_NAME}.$${HOST}`)"
-      - "traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=${APP_PORT}"
-      - "traefik.http.routers.${PROJECT_NAME}-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${PROJECT_NAME:-project}-secure.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME:-project}-secure.rule=Host(`${PROJECT_NAME:-project}.${HOST:-localhost}`)"
+      - "traefik.http.services.${PROJECT_NAME:-project}.loadbalancer.server.port=3310"
+      - "traefik.http.routers.${PROJECT_NAME:-project}-secure.tls.certresolver=letsencrypt"
 
 networks:
   proxy:
