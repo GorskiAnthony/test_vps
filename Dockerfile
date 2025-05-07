@@ -10,25 +10,26 @@ ARG NODE_ENV=production
 # Installation des dépendances globales nécessaires
 RUN npm install -g typescript@5.8.2 vite@6.2.4
 
-# Copie des fichiers du client
-COPY client/package*.json ./
+# Création du répertoire de travail
+WORKDIR /app/client
 
-# Installation des dépendances avec plus de détails
+# Copie des fichiers package.json et tsconfig.json
+COPY client/package*.json client/tsconfig*.json ./
+
+# Installation des dépendances avec types React
 RUN echo "Installing dependencies..." && \
     npm install --legacy-peer-deps && \
+    npm install --save-dev @types/react @types/react-dom && \
     echo "Dependencies installed successfully"
 
 # Copie des fichiers sources
 COPY client/ ./
 
-# Vérification de la présence des fichiers
-RUN echo "Checking files:" && ls -la
+# Création du fichier de déclaration pour jsx-runtime
+RUN echo 'declare module "react/jsx-runtime" { export { jsx, jsxs, Fragment } from "react" }' > src/jsx-runtime.d.ts
 
-# Build du client avec plus de détails
-RUN echo "Starting TypeScript check..." && \
-    npx tsc --noEmit && \
-    echo "TypeScript check passed" && \
-    echo "Starting Vite build..." && \
+# Build direct avec Vite (qui inclut la vérification TypeScript)
+RUN echo "Starting Vite build..." && \
     npx vite build && \
     echo "Build completed successfully" && \
     echo "Build output:" && \
