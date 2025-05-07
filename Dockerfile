@@ -24,6 +24,9 @@ RUN cd server && npm run build
 # Copier le dossier client
 RUN cp -r client server/
 
+# Copier le dossier server
+RUN cp -r server server/
+
 # Étape 2 : Image finale
 FROM node:20-alpine
 
