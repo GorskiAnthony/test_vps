@@ -3,15 +3,14 @@ FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Copier séparément pour maximiser le cache
+# Installer les dépendances
 COPY client/package*.json ./client/
 COPY server/package*.json ./server/
 
-# Installer les deps séparément
 RUN cd client && npm install
 RUN cd server && npm install
 
-# Copier le reste du code
+# Copier les sources
 COPY client ./client
 COPY server ./server
 
@@ -21,20 +20,19 @@ RUN cd client && npm run build
 # Build du serveur
 RUN cd server && npm run build
 
-# Copier le dossier client
-RUN cp -r client server/
-
-# Copier le dossier server
-RUN cp -r server server/
-
 # Étape 2 : Image finale
 FROM node:20-alpine
 
 WORKDIR /app
 
-# Copie des fichiers du serveur
-COPY --from=build /app/server .
+# Copier le serveur tel quel
+COPY --from=build /app/server ./server
 
+# Copier aussi le dossier client (avec dist dedans)
+COPY --from=build /app/client ./client
+
+# Installer les deps dans server
+WORKDIR /app/server
 RUN npm install --omit=dev
 
 EXPOSE 3310
