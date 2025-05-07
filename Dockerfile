@@ -10,32 +10,20 @@ ARG NODE_ENV=production
 # Installation des dépendances globales nécessaires
 RUN npm install -g pnpm
 
-# Création du répertoire de travail
+# Copie des fichiers du client
+COPY client/ ./client/
 WORKDIR /app/client
 
-# Copie des fichiers de configuration
-COPY client/package*.json client/tsconfig*.json client/vite.config.ts ./
-
-# Installation des dépendances avec pnpm pour une meilleure gestion
-RUN echo "Installing dependencies..." && \
+# Installation des dépendances avec pnpm
+RUN echo "Installing client dependencies..." && \
     pnpm install --no-frozen-lockfile && \
-    pnpm add -D @vitejs/plugin-react@4.3.4 @types/react@19.0.12 @types/react-dom@19.0.4 && \
-    echo "Dependencies installed successfully"
+    pnpm add -D @vitejs/plugin-react@4.3.4 && \
+    echo "Client dependencies installed successfully"
 
-# Copie des fichiers sources
-COPY client/ ./
-
-# Vérification de l'installation
-RUN echo "Installed packages:" && \
-    pnpm list && \
-    echo "Vite config:" && \
-    cat vite.config.ts
-
-# Build avec Vite
-RUN echo "Starting Vite build..." && \
+# Build du client
+RUN echo "Building client..." && \
     pnpm build && \
-    echo "Build completed successfully" && \
-    echo "Build output:" && \
+    echo "Client build completed" && \
     ls -la dist/
 
 # Étape 2 : Build du serveur
@@ -43,18 +31,23 @@ FROM node:20-alpine AS server-builder
 
 WORKDIR /app
 
-# Installation des dépendances globales nécessaires
+# Installation des dépendances globales
 RUN npm install -g typescript tsx
 
 # Copie des fichiers du serveur
-COPY server/package*.json ./
-RUN npm install
+COPY server/ ./server/
+WORKDIR /app/server
 
-COPY server/ ./
+# Installation des dépendances
+RUN echo "Installing server dependencies..." && \
+    npm install && \
+    echo "Server dependencies installed successfully"
 
-# Build du serveur avec debug
+# Build du serveur
 RUN echo "Building server..." && \
-    npm run build || (echo "Build failed" && ls -la && exit 1)
+    npm run build && \
+    echo "Server build completed" && \
+    ls -la dist/
 
 # Étape 3 : Image finale
 FROM node:20-alpine
@@ -67,10 +60,10 @@ WORKDIR /app
 # Installation des outils de diagnostic
 RUN apk add --no-cache curl
 
-# Copie des fichiers nécessaires du serveur
+# Copie des fichiers du serveur
 COPY --from=server-builder /app/server/dist ./dist
-COPY --from=server-builder /app/server/package*.json ./
-COPY --from=server-builder /app/server/node_modules ./node_modules
+COPY --from=server-builder /app/server/package.json ./package.json
+RUN npm install --omit=dev
 
 # Copie des fichiers statiques du client
 RUN mkdir -p public
