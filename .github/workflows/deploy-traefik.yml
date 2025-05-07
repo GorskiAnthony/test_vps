@@ -63,6 +63,9 @@ jobs:
             grep -E '^(APP_PORT|DB_HOST|DB_NAME|HOST)=' $ENV_PROJECT_PATH
             echo "ℹ️ Variables sensibles masquées (DB_USER, DB_PASSWORD, APP_SECRET)"
 
+            # 👉 Aller dans le bon dossier du projet avant de lancer Docker Compose
+            cd /home/ubuntu/projects/${{ vars.PROJECT_NAME }}
+
             docker compose -f docker-compose.prod.yml --env-file $ENV_PROJECT_PATH up -d
 
             echo "⏳ Attente du démarrage du container..."
