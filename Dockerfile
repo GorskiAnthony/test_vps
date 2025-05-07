@@ -15,9 +15,6 @@ RUN cd server && npm install
 COPY client ./client
 COPY server ./server
 
-# Variables d'environnement pour le build front
-ENV VITE_API_URL=http://localhost:3000
-
 # Build du client
 RUN cd client && npm run build
 
@@ -35,15 +32,8 @@ WORKDIR /app
 # Copie des fichiers du serveur
 COPY --from=build /app/server .
 
-# Copie du build client
-COPY --from=build /app/server/client ./client
-
 RUN npm install --omit=dev
 
 EXPOSE 3310
-ENV NODE_ENV=production \
-    PORT=3310 \
-    DB_HOST=database-db \
-    DB_PORT=3306
 
 CMD ["npm", "run", "start"]
