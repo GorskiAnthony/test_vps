@@ -36,6 +36,7 @@ RUN npm install
 # Copie de tous les fichiers source du serveur
 COPY server/src ./src
 COPY server/database ./database
+COPY server/bin ./bin
 COPY server/tsconfig.json ./
 
 # Configuration TypeScript pour le build
