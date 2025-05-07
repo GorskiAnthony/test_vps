@@ -25,7 +25,7 @@ ARG NODE_ENV=production
 
 # Installation des dépendances du serveur
 COPY server/package*.json ./
-RUN npm ci
+RUN npm install
 
 # Build du serveur
 COPY server/ ./
@@ -47,7 +47,7 @@ COPY --from=server-builder /app/server/dist ./dist
 COPY --from=server-builder /app/server/package*.json ./
 
 # Installation des dépendances de production uniquement
-RUN npm ci --omit=dev && npm cache clean --force
+RUN npm install --omit=dev && npm cache clean --force
 
 # Création et copie des fichiers statiques du client
 RUN mkdir -p public
