@@ -63,7 +63,7 @@ jobs:
             grep -E '^(APP_PORT|DB_HOST|DB_NAME|HOST)=' $ENV_PROJECT_PATH
             echo "ℹ️ Variables sensibles masquées (DB_USER, DB_PASSWORD, APP_SECRET)"
 
-            # 👉 Aller dans le bon dossier du projet avant de lancer Docker Compose
+            # 👉 Aller dans le bon dossier du projet
             cd /home/ubuntu/projects/${{ vars.PROJECT_DIRECTORY_NAME }}
 
             docker compose -f docker-compose.prod.yml --env-file $ENV_PROJECT_PATH up -d
@@ -72,4 +72,4 @@ jobs:
             sleep 10
 
             echo "🚀 Lancement de la migration..."
-            docker exec ${{ vars.PROJECT_NAME }} npm run migrate || echo "❗ Migration échouée ou non nécessaire"
+            docker exec ${{ vars.PROJECT_NAME }}-web npm run migrate || echo "❗ Migration échouée ou non nécessaire"
