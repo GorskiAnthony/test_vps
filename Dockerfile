@@ -57,6 +57,8 @@ RUN apk add --no-cache curl && \
 
 # Copie des fichiers du serveur
 COPY --from=server-builder /app/server/dist ./dist
+COPY --from=server-builder /app/server/bin ./bin
+COPY --from=server-builder /app/server/database ./database
 COPY --from=server-builder /app/server/package.json ./
 RUN npm install --omit=dev
 
@@ -79,4 +81,4 @@ EXPOSE 3310
 ENV NODE_ENV=production \
     PORT=3310
 
-CMD ["tsx", "./dist/main.js"]
+CMD ["/bin/sh", "-c", "tsx ./bin/migrate.ts && tsx ./dist/main.js"]
