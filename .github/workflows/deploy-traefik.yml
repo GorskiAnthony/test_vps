@@ -63,18 +63,7 @@ jobs:
             grep -E '^(APP_PORT|DB_HOST|DB_NAME|HOST)=' $ENV_PROJECT_PATH
             echo "ℹ️ Variables sensibles masquées (DB_USER, DB_PASSWORD, APP_SECRET)"
 
-            docker run -d \
-              --name ${{ vars.PROJECT_NAME }} \
-              --env-file $ENV_PROJECT_PATH \
-              --network proxy \
-              -l traefik.enable=true \
-              -l traefik.docker.network=proxy \
-              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.rule=Host(\`${{ vars.PROJECT_NAME }}.${HOST}\`)" \
-              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.entrypoints=websecure" \
-              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.tls.certresolver=myresolver" \
-              -l "traefik.http.services.${{ vars.PROJECT_NAME }}.loadbalancer.server.port=3000" \
-              -p 3000:3000 \
-              ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
+            docker compose -f docker-compose.prod.yml --env-file $ENV_PROJECT_PATH up -d
 
             echo "⏳ Attente du démarrage du container..."
             sleep 10
