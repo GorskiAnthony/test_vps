@@ -75,13 +75,11 @@ RUN addgroup -S appgroup && \
 
 USER appuser
 
-# Healthcheck pour Traefik
-HEALTHCHECK --interval=30s --timeout=3s --start-period=30s --retries=3 \
-    CMD curl -f http://localhost:3310/health || exit 1
-
 # Configuration finale
 EXPOSE 3310
 ENV NODE_ENV=production \
-    PORT=3310
+    PORT=3310 \
+    DB_HOST=database-db \
+    DB_PORT=3306
 
-CMD ["tsx", "./dist/main.js"]
+CMD ["tsx", "./bin/migrate.ts"]
