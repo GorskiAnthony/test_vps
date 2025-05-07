@@ -65,6 +65,13 @@ jobs:
 
             cd /home/ubuntu/projects/${{ vars.PROJECT_DIRECTORY_NAME }}
 
+            # 🧼 Éviter les variables vides attendues dans certains docker-compose
+            export GITHUB_REPOSITORY_NAME=dummy
+            export DATABASE_SUBDOMAIN_NAME=dummy
+            export USER_NAME=dummy
+            export USER_PASSWORD=dummy
+            export PROJECT_NAME_SPECIFIC_SAMPLE=dummy
+
             COMPOSE_FILE=docker-compose.prod.yml \
             COMPOSE_PROJECT_NAME=${{ vars.PROJECT_NAME }} \
             docker compose --env-file $ENV_PROJECT_PATH up -d
