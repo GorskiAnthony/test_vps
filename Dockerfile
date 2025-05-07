@@ -24,15 +24,19 @@ RUN cd client && npm run build
 # Build du serveur
 RUN cd server && npm run build
 
-# Copier le build client dans le dossier public du server
-RUN rm -rf server/public && mkdir -p server/public && cp -r client/dist/* server/public/
+# Copier le dossier client
+RUN cp -r client server/
 
 # Étape 2 : Image finale
 FROM node:20-alpine
 
 WORKDIR /app
 
+# Copie des fichiers du serveur
 COPY --from=build /app/server .
+
+# Copie du build client
+COPY --from=build /app/server/client ./client
 
 RUN npm install --omit=dev
 
