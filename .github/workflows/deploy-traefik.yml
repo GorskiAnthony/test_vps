@@ -26,19 +26,19 @@ jobs:
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/project-${{ vars.PROJECT_NAME }}:latest
 
-      - name: 🧾 Générer un JSON d'environnement
-        id: envjson
-        run: |
-          echo '${{
-            toJson({
-              DOCKER_USERNAME: secrets.DOCKER_USERNAME,
-              APP_SECRET: vars.APP_SECRET,
-              HOST: vars.HOST,
-              USER_NAME: vars.USER_NAME,
-              USER_PASSWORD: vars.USER_PASSWORD,
-              DATABASE_SUBDOMAIN_NAME: vars.DATABASE_SUBDOMAIN_NAME
-            })
-          }}' > env.json
+           - name: 🧾 Générer un JSON d'environnement
+              run: |
+                cat <<EOF > env.json
+                {
+                  "DOCKER_USERNAME": "${{ secrets.DOCKER_USERNAME }}",
+                  "APP_SECRET": "${{ vars.APP_SECRET }}",
+                  "HOST": "${{ vars.HOST }}",
+                  "USER_NAME": "${{ vars.USER_NAME }}",
+                  "USER_PASSWORD": "${{ vars.USER_PASSWORD }}",
+                  "DATABASE_SUBDOMAIN_NAME": "${{ vars.DATABASE_SUBDOMAIN_NAME }}"
+                }
+                EOF
+
 
       - name: 🚀 Déploiement via SSH (script VPS)
         uses: appleboy/ssh-action@master
