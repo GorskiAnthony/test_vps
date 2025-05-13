@@ -79,4 +79,4 @@ jobs:
             sleep 5
 
             echo "🚀 Lancement de la migration..."
-            docker exec ${{ vars.PROJECT_NAME }} npm run migrate || echo "❗ Migration échouée ou non nécessaire"
+            docker exec ${{ vars.PROJECT_NAME }} npm run db:migrate || echo "❗ Migration échouée ou non nécessaire"
