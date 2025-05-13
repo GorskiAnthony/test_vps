@@ -24,7 +24,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
+          tags: ${{ secrets.DOCKER_USERNAME }}/project-${{ vars.PROJECT_NAME }}:latest
 
       - name: 🚀 Deploy on VPS via SSH
         uses: appleboy/ssh-action@master
@@ -33,50 +33,15 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            docker pull ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
+            export GITHUB_ACCOUNT_NAME=${{ github.repository_owner }}
+            export GITHUB_REPOSITORY_NAME=${{ vars.PROJECT_NAME }}
+            export PROJECT_NAME=${{ vars.PROJECT_NAME }}
+            export GITHUB_JSON_VARS=$(jq -n               --arg DOCKER_USERNAME "${{ secrets.DOCKER_USERNAME }}"               --arg DATABASE_SUBDOMAIN_NAME "${{ vars.DATABASE_SUBDOMAIN_NAME }}"               --arg USER_NAME "${{ vars.USER_NAME }}"               --arg USER_PASSWORD "${{ secrets.USER_PASSWORD }}"               --arg APP_SECRET "${{ secrets.APP_SECRET }}"               '{
+                "DOCKER_USERNAME": $DOCKER_USERNAME,
+                "DATABASE_SUBDOMAIN_NAME": $DATABASE_SUBDOMAIN_NAME,
+                "USER_NAME": $USER_NAME,
+                "USER_PASSWORD": $USER_PASSWORD,
+                "APP_SECRET": $APP_SECRET
+              }')
 
-            docker stop ${{ vars.PROJECT_NAME }} || true
-            docker rm ${{ vars.PROJECT_NAME }} || true
-
-            docker network ls | grep -q proxy || docker network create proxy
-
-            GLOBAL_ENV_PATH=/home/ubuntu/traefik/data/.env
-            HOST=$(grep '^HOST=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
-            APP_SECRET=$(grep '^APP_SECRET=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
-            DB_HOST="$(grep '^DATABASE_SUBDOMAIN_NAME=' $GLOBAL_ENV_PATH | cut -d '=' -f2)-db"
-            DB_USER=$(grep '^USER_NAME=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
-            DB_PASSWORD=$(grep '^USER_PASSWORD=' $GLOBAL_ENV_PATH | cut -d '=' -f2)
-
-            ENV_PROJECT_PATH=/tmp/${{ vars.PROJECT_NAME }}.env
-
-            echo "APP_PORT=3310" > $ENV_PROJECT_PATH
-            echo "APP_SECRET=$APP_SECRET" >> $ENV_PROJECT_PATH
-            echo "DB_HOST=$DB_HOST" >> $ENV_PROJECT_PATH
-            echo "DB_PORT=3306" >> $ENV_PROJECT_PATH
-            echo "DB_USER=$DB_USER" >> $ENV_PROJECT_PATH
-            echo "DB_PASSWORD=$DB_PASSWORD" >> $ENV_PROJECT_PATH
-            echo "DB_NAME=${{ vars.PROJECT_NAME }}" >> $ENV_PROJECT_PATH
-            echo "HOST=$HOST" >> $ENV_PROJECT_PATH
-
-            echo "✅ .env projet généré avec succès ✅"
-            echo "Contenu visible :"
-            grep -E '^(APP_PORT|DB_HOST|DB_NAME|HOST)=' $ENV_PROJECT_PATH
-            echo "ℹ️ Variables sensibles masquées (DB_USER, DB_PASSWORD, APP_SECRET)"
-
-            docker run -d \
-              --name ${{ vars.PROJECT_NAME }} \
-              --env-file $ENV_PROJECT_PATH \
-              --network proxy \
-              -l traefik.enable=true \
-              -l traefik.docker.network=proxy \
-              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}-secure.rule=Host(\`${{ vars.PROJECT_NAME }}.${HOST}\`)" \
-              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}-secure.entrypoints=websecure" \
-              -l "traefik.http.routers.${{ vars.PROJECT_NAME }}.tls.certresolver=letsencrypt" \
-              -l "traefik.http.services.${{ vars.PROJECT_NAME }}.loadbalancer.server.port=3310" \
-              ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
-
-            echo "⏳ Attente du démarrage du container..."
-            sleep 5
-
-            echo "🚀 Lancement de la migration..."
-            docker exec ${{ vars.PROJECT_NAME }} npm run db:migrate || echo "❗ Migration échouée ou non nécessaire"
+            bash /home/ubuntu/scripts/deploy.sh "$GITHUB_ACCOUNT_NAME" "$GITHUB_REPOSITORY_NAME" "$PROJECT_NAME" "$GITHUB_JSON_VARS"
