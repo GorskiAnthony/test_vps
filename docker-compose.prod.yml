@@ -3,17 +3,17 @@ version: "3.8"
 services:
   web:
     image: ${DOCKER_IMAGE}
-    container_name: ${PROJECT_NAME:-project}-web
+    container_name: ${PROJECT_NAME}-web
     restart: always
     networks:
       - proxy
     labels:
       - "traefik.enable=true"
       - "traefik.docker.network=proxy"
-      - "traefik.http.routers.${PROJECT_NAME:-project}-secure.entrypoints=websecure"
-      - "traefik.http.routers.${PROJECT_NAME:-project}-secure.rule=Host(`${PROJECT_NAME:-project}.${HOST:-localhost}`)"
-      - "traefik.http.services.${PROJECT_NAME:-project}.loadbalancer.server.port=3310"
-      - "traefik.http.routers.${PROJECT_NAME:-project}-secure.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.${PROJECT_NAME}-secure.entrypoints=websecure"
+      - "traefik.http.routers.${PROJECT_NAME}-secure.rule=Host(`${PROJECT_NAME}.${HOST}`)"
+      - "traefik.http.services.${PROJECT_NAME}.loadbalancer.server.port=3310"
+      - "traefik.http.routers.${PROJECT_NAME}-secure.tls.certresolver=letsencrypt"
 
 networks:
   proxy:
