@@ -1,4 +1,4 @@
-name: CD-traefik
+name: CD-Traefik-Deploy
 
 on:
   push:
@@ -10,38 +10,46 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: 📦 Checkout code
+      - name: 📦 Checkout du code
         uses: actions/checkout@v3
 
-      - name: 🔐 Log in to Docker Hub
+      - name: 🔐 Connexion à Docker Hub
         uses: docker/login-action@v2
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: 🛠️ Build and push Docker image
+      - name: 🛠️ Build et push de l'image Docker
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
           tags: ${{ secrets.DOCKER_USERNAME }}/project-${{ vars.PROJECT_NAME }}:latest
 
-      - name: 🚀 Deploy on VPS via SSH
+      - name: 🧾 Générer un JSON d'environnement
+        id: envjson
+        run: |
+          echo '${{
+            toJson({
+              DOCKER_USERNAME: secrets.DOCKER_USERNAME,
+              APP_SECRET: vars.APP_SECRET,
+              HOST: vars.HOST,
+              USER_NAME: vars.USER_NAME,
+              USER_PASSWORD: vars.USER_PASSWORD,
+              DATABASE_SUBDOMAIN_NAME: vars.DATABASE_SUBDOMAIN_NAME
+            })
+          }}' > env.json
+
+      - name: 🚀 Déploiement via SSH (script VPS)
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            export GITHUB_ACCOUNT_NAME=${{ github.repository_owner }}
-            export GITHUB_REPOSITORY_NAME=${{ vars.PROJECT_NAME }}
-            export PROJECT_NAME=${{ vars.PROJECT_NAME }}
-            export GITHUB_JSON_VARS=$(jq -n               --arg DOCKER_USERNAME "${{ secrets.DOCKER_USERNAME }}"               --arg DATABASE_SUBDOMAIN_NAME "${{ vars.DATABASE_SUBDOMAIN_NAME }}"               --arg USER_NAME "${{ vars.USER_NAME }}"               --arg USER_PASSWORD "${{ secrets.USER_PASSWORD }}"               --arg APP_SECRET "${{ secrets.APP_SECRET }}"               '{
-                "DOCKER_USERNAME": $DOCKER_USERNAME,
-                "DATABASE_SUBDOMAIN_NAME": $DATABASE_SUBDOMAIN_NAME,
-                "USER_NAME": $USER_NAME,
-                "USER_PASSWORD": $USER_PASSWORD,
-                "APP_SECRET": $APP_SECRET
-              }')
-
-            bash /home/ubuntu/traefik/deploy/js-project.sh "$GITHUB_ACCOUNT_NAME" "$GITHUB_REPOSITORY_NAME" "$PROJECT_NAME" "$GITHUB_JSON_VARS"
+            GITHUB_JSON_VARS=$(cat env.json)
+            bash ~/traefik/deploy/deploy.sh \
+              ${{ github.repository_owner }} \
+              ${{ github.event.repository.name }} \
+              ${{ vars.PROJECT_NAME }} \
+              "$GITHUB_JSON_VARS"
