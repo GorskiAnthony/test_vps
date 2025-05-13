@@ -4,7 +4,7 @@ function App() {
   return (
     <>
       <header>
-        <h1 className="logo">test vps</h1>
+        <h1 className="logo">qlkdjcsqkl,dcksl<wcjkl<;cw,k<lwcj,kl<w; x<wlkx,clmk<wx,c</h1>
       </header>
 
       <nav className="navbar">
