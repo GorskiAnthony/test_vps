@@ -44,4 +44,4 @@ jobs:
                 "APP_SECRET": $APP_SECRET
               }')
 
-            bash /home/ubuntu/traefik/deploy.sh "$GITHUB_ACCOUNT_NAME" "$GITHUB_REPOSITORY_NAME" "$PROJECT_NAME" "$GITHUB_JSON_VARS"
+            bash /home/ubuntu/traefik/deploy/js-project-deploy.sh "$GITHUB_ACCOUNT_NAME" "$GITHUB_REPOSITORY_NAME" "$PROJECT_NAME" "$GITHUB_JSON_VARS"
