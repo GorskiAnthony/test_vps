@@ -76,7 +76,7 @@ jobs:
               ${{ secrets.DOCKER_USERNAME }}/${{ vars.PROJECT_NAME }}:latest
 
             echo "⏳ Attente du démarrage du container..."
-            sleep 15
+            sleep 5
 
             echo "🚀 Lancement de la migration..."
             docker exec ${{ vars.PROJECT_NAME }} npm run migrate || echo "❗ Migration échouée ou non nécessaire"
