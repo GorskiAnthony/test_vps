@@ -17,5 +17,5 @@ values
 
 insert into item(id, title, user_id)
 values
-  (1, "Stuff", 1),
-  (2, "Doodads", 1);
+  (1, "sdfgdsgsdf", 1),
+  (2, "Dodfgdsfgsdfgsdfgsdfgsdfgdsfgodads", 1);
