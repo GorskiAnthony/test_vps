@@ -36,7 +36,6 @@ jobs:
             "USER_PASSWORD": "${{ vars.USER_PASSWORD }}",
             "DATABASE_SUBDOMAIN_NAME": "${{ vars.DATABASE_SUBDOMAIN_NAME }}"
           }' > env.json
-
       - name: 🚀 Déploiement via SSH (script VPS)
         uses: appleboy/ssh-action@master
         with:
@@ -44,9 +43,7 @@ jobs:
           username: ${{ secrets.SSH_USER }}
           password: ${{ secrets.SSH_PASSWORD }}
           script: |
-            GITHUB_JSON_VARS=$(cat env.json)
             bash ~/traefik/deploy/deploy.sh \
-              ${{ github.repository_owner }} \
-              ${{ github.event.repository.name }} \
-              ${{ vars.PROJECT_NAME }} \
-              "$GITHUB_JSON_VARS"
+              "${{ github.repository_owner }}" \
+              "${{ github.event.repository.name }}" \
+              "${{ vars.PROJECT_NAME }}"
